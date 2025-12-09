@@ -153,7 +153,7 @@ The choice of FOI denominator (weighted vs. unweighted by host density) affects 
 
 If you use any part of this code or data, please cite the associated article:
 
-> Althouse BM (2025) *Ecological specialization in vectors drives backward bifurcations and creates enzootic traps in multi-host, multi-vector systems.* PLoS Computational Biology (in press).
+> Althouse BM (2025) *Ecological specialization in vectors drives backward bifurcations and creates enzootic traps in multi-host, multi-vector systems.* PLoS Computational Biology (submitted).
 
 And the original model derivation:
 
