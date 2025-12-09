@@ -13,8 +13,12 @@
 
 rm(list = ls())
 
-# Set working directory to the source file location
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# Set working directory
+# For RStudio: uses active document location
+# For command line: assumes script is run from its own directory
+if (requireNamespace("rstudioapi", quietly = TRUE) && rstudioapi::isAvailable()) {
+  setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+}
 
 # Get today's date
 today <- format(Sys.Date(), "%Y-%m-%d")
@@ -29,7 +33,7 @@ if (!dir.exists(output.dir)) {
 # ---- packages ----------------------------------------------------------------
 library(fields)          # contour & colour support
 library(RColorBrewer)
-library(rgl)
+# library(rgl)  # Not needed for 2D contour plots
 
 # ---- source analytic R0 functions --------------------------------------------
 source('r0numerical2specIntro.r', chdir = F)
@@ -173,9 +177,11 @@ equalise_bites <- function(f_old) {
     
     # -------- helper to rescale one vector -----------------
     rescale <- function(r_vec) {
-      sum_r   <- sum(r_vec)
-      avg_r   <- sum(r_vec * Nh_vec) / sum(Nh_vec)   # weighted average
-      r_vec * (sum_r / avg_r)                        # multiply by c_j
+      # Reviewer #2's normalization: c_j = N_j^M / N_j^W
+      # where N_j^M = total host abundance (unweighted)
+      #       N_j^W = weighted denominator = sum(r_vj_hi * N_hi)
+      c_j <- sum(Nh_vec) / sum(r_vec * Nh_vec)
+      r_vec * c_j                                    # multiply by c_j
     }
     
     # enforce equal‐bite totals
@@ -191,10 +197,9 @@ equalise_bites <- function(f_old) {
   }
 }
 
-# Build the “equal‑bite” version of the un‑weighted FOI
+# Build the "equal‑bite" version of the un‑weighted FOI
 r0old.eq <- equalise_bites(r0old)
-# Build the “equal‑bite” version of the un‑weighted FOI
-r0new.eq <- equalise_bites(r0new)
+# NOTE: r0new already has the correct weighted denominator, no normalization needed
 
 
 
@@ -225,7 +230,7 @@ xs.host <- seq(1, 50 * 100, length.out = 100)   # Nh
 ys.host <- xs.host                              # Np1
 
 f_new_host <- function(Nh, Np1)
-  do.call(r0new.eq, modifyList(core.args,
+  do.call(r0new, modifyList(core.args,
                             list(Nh = Nh, Np1 = Np1, Nm1 = 25000, NN = Nh + Np1)))
 
 f_old_host <- function(Nh, Np1)
@@ -256,7 +261,7 @@ xs.hv <- xs.host                               # Nh: 1–5 ×10^3
 ys.hv <- seq(1, 500 * 100, length.out = 100)  # Nm1: 1–5 ×10^4
 
 f_new_hv <- function(Nh, Nm1)
-  do.call(r0new.eq, modifyList(core.args,
+  do.call(r0new, modifyList(core.args,
                             list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh)))
 
 f_old_hv <- function(Nh, Nm1)
@@ -280,7 +285,7 @@ trans.args <- modifyList(core.args,
 
 
 f_new_tr <- function(betaSmall, betaLarge)
-  do.call(r0new.eq, modifyList(trans.args,
+  do.call(r0new, modifyList(trans.args,
                             list(bm1h = betaSmall, bhm1 = betaSmall,
                                  bm2h = betaSmall, bhm2 = betaSmall,
                                  bm1p1 = betaLarge, bm2p1 = betaLarge,
