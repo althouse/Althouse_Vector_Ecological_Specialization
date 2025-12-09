@@ -5,7 +5,7 @@
 **"Ecological specialization in vectors drives backward bifurcations and creates enzootic traps in multi-host, multi-vector systems."**
 
 Benjamin M. Althouse  
-*PLoS Computational Biology* (2025)
+*Submitted to PLoS Computational Biology* (2025)
 
 ---
 
