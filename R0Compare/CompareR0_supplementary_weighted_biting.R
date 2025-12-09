@@ -18,7 +18,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Get today's date
 today <- format(Sys.Date(), "%Y-%m-%d")
-output.dir <- paste0("output_", today, "/")
+output.dir <- paste0("output_", today, "_supp_weighted/")
 # Check if the directory exists
 if (!dir.exists(output.dir)) {
   # Create the directory if it doesn't exist
@@ -150,6 +150,54 @@ library(compiler)
 r0new <- cmpfun(r0new)
 r0old <- cmpfun(r0old)
 
+
+# -------------------------------------------------------------------
+#  After:  source('r0numerical2specIntro.r')      #  r0new()
+#          source('r0numerical2specIntroOldDenom.r')  #  r0old()
+#
+#  Patch:  create a wrapper that enforces "equal‐bite" normalization
+# -------------------------------------------------------------------
+
+equalise_bites <- function(f_old) {
+  
+  function(...) {
+    # -------- pull arguments into a named list -------------
+    args <- list(...)
+    
+    # -------- convenience vectors --------------------------
+    Nh_vec <- c(args$Nh,  args$Np1)      # host abundances (extend if >2)
+    # biting constants for vector 1 (primary = h, secondary = p1)
+    r_v1   <- c(args$rm1h, args$rm1p1)
+    # biting constants for vector 2
+    r_v2   <- c(args$rm2h, args$rm2p1)
+    
+    # -------- helper to rescale one vector -----------------
+    rescale <- function(r_vec) {
+      sum_r   <- sum(r_vec)
+      avg_r   <- sum(r_vec * Nh_vec) / sum(Nh_vec)   # weighted average
+      r_vec * (sum_r / avg_r)                        # multiply by c_j
+    }
+    
+    # enforce equal‐bite totals
+    r_v1 <- rescale(r_v1)
+    r_v2 <- rescale(r_v2)
+    
+    # write the scaled rates back into the arg list
+    args$rm1h  <- r_v1[1];  args$rm1p1 <- r_v1[2]
+    args$rm2h  <- r_v2[1];  args$rm2p1 <- r_v2[2]
+    
+    # -------- call the original r0old() with updated args --
+    do.call(f_old, args)
+  }
+}
+
+# Build the “equal‑bite” version of the un‑weighted FOI
+r0old.eq <- equalise_bites(r0old)
+# Build the “equal‑bite” version of the un‑weighted FOI
+r0new.eq <- equalise_bites(r0new)
+
+
+
 # -----------------------------------------------------------------------------#
 # 2  Global constants that never change across any surface
 # -----------------------------------------------------------------------------#
@@ -177,15 +225,29 @@ xs.host <- seq(1, 50 * 100, length.out = 100)   # Nh
 ys.host <- xs.host                              # Np1
 
 f_new_host <- function(Nh, Np1)
-  do.call(r0new, modifyList(core.args,
+  do.call(r0new.eq, modifyList(core.args,
                             list(Nh = Nh, Np1 = Np1, Nm1 = 25000, NN = Nh + Np1)))
 
 f_old_host <- function(Nh, Np1)
-  do.call(r0old, modifyList(core.args,
+  do.call(r0old.eq, modifyList(core.args,
                             list(Nh = Nh, Np1 = Np1, Nm1 = 25000, NN = Nh + Np1)))
 
 newR0hosts <- outer(xs.host, ys.host, Vectorize(f_new_host))
 oldR0hosts <- outer(xs.host, ys.host, Vectorize(f_old_host))
+
+# # NEW – point f_old_host at r0old.eq instead of r0old
+# f_old_host <- function(Nh, Np1)
+#   do.call(r0old.eq, modifyList(core.args,
+#                                list(Nh = Nh, Np1 = Np1,
+#                                     Nm1 = 25000, NN = Nh + Np1)))
+# oldR0hosts <- outer(xs.host, ys.host, Vectorize(f_old_host))
+# 
+# f_new_host <- function(Nh, Np1)
+#   do.call(r0new.eq, modifyList(core.args,
+#                                list(Nh = Nh, Np1 = Np1,
+#                                     Nm1 = 25000, NN = Nh + Np1)))
+# newR0hosts <- outer(xs.host, ys.host, Vectorize(f_new_host))
+
 
 # -----------------------------------------------------------------------------#
 # 4  Surface (ii):  large-host abundance vs. vector abundance
@@ -194,15 +256,17 @@ xs.hv <- xs.host                               # Nh: 1–5 ×10^3
 ys.hv <- seq(1, 500 * 100, length.out = 100)  # Nm1: 1–5 ×10^4
 
 f_new_hv <- function(Nh, Nm1)
-  do.call(r0new, modifyList(core.args,
+  do.call(r0new.eq, modifyList(core.args,
                             list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh)))
 
 f_old_hv <- function(Nh, Nm1)
-  do.call(r0old, modifyList(core.args,
+  do.call(r0old.eq, modifyList(core.args,
                             list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh)))
 
 newR0hostvec <- outer(xs.hv, ys.hv, Vectorize(f_new_hv))
 oldR0hostvec <- outer(xs.hv, ys.hv, Vectorize(f_old_hv))
+
+
 
 # -----------------------------------------------------------------------------#
 # 5  Surface (iii):  transmission-probability grid
@@ -214,15 +278,16 @@ trans.args <- modifyList(core.args,
                          list(rm1p1 = 0.001, rm2h = 0.001,
                               Nh = 1000, Np1 = 1000, Nm1 = 25000, NN = 2000))
 
+
 f_new_tr <- function(betaSmall, betaLarge)
-  do.call(r0new, modifyList(trans.args,
+  do.call(r0new.eq, modifyList(trans.args,
                             list(bm1h = betaSmall, bhm1 = betaSmall,
                                  bm2h = betaSmall, bhm2 = betaSmall,
                                  bm1p1 = betaLarge, bm2p1 = betaLarge,
                                  bp1m1 = betaLarge, bp1m2 = betaLarge)))
 
 f_old_tr <- function(betaSmall, betaLarge)
-  do.call(r0old, modifyList(trans.args,
+  do.call(r0old.eq, modifyList(trans.args,
                             list(bm1h = betaSmall, bhm1 = betaSmall,
                                  bm2h = betaSmall, bhm2 = betaSmall,
                                  bm1p1 = betaLarge, bm2p1 = betaLarge,
@@ -306,6 +371,7 @@ shadedcontour(newR0hostvec, oldR0hostvec,
 
 mtext("Number Large Host (1000s)", side = 1,
       line = lin, cex = CX, outer = FALSE, at = 0)
+
 
 ## -------------------------------------------------------------------------
 ## Panel e / f  –  transmission-probability grid

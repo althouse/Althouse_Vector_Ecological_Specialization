@@ -18,7 +18,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Get today's date
 today <- format(Sys.Date(), "%Y-%m-%d")
-output.dir <- paste0("output_", today, "/")
+output.dir <- paste0("output_", today, "_supp/")
 # Check if the directory exists
 if (!dir.exists(output.dir)) {
   # Create the directory if it doesn't exist
@@ -214,19 +214,21 @@ trans.args <- modifyList(core.args,
                          list(rm1p1 = 0.001, rm2h = 0.001,
                               Nh = 1000, Np1 = 1000, Nm1 = 25000, NN = 2000))
 
+mult <- 0.25
+
 f_new_tr <- function(betaSmall, betaLarge)
   do.call(r0new, modifyList(trans.args,
-                            list(bm1h = betaSmall, bhm1 = betaSmall,
-                                 bm2h = betaSmall, bhm2 = betaSmall,
+                            list(bm1h = betaSmall, bhm1 = betaSmall*mult,
+                                 bm2h = betaSmall, bhm2 = betaSmall*mult,
                                  bm1p1 = betaLarge, bm2p1 = betaLarge,
-                                 bp1m1 = betaLarge, bp1m2 = betaLarge)))
+                                 bp1m1 = betaLarge*mult, bp1m2 = betaLarge*mult)))
 
 f_old_tr <- function(betaSmall, betaLarge)
   do.call(r0old, modifyList(trans.args,
-                            list(bm1h = betaSmall, bhm1 = betaSmall,
-                                 bm2h = betaSmall, bhm2 = betaSmall,
+                            list(bm1h = betaSmall, bhm1 = betaSmall*mult,
+                                 bm2h = betaSmall, bhm2 = betaSmall*mult,
                                  bm1p1 = betaLarge, bm2p1 = betaLarge,
-                                 bp1m1 = betaLarge, bp1m2 = betaLarge)))
+                                 bp1m1 = betaLarge*mult, bp1m2 = betaLarge*mult)))
 
 newR0trans <- outer(xs.tr, ys.tr, Vectorize(f_new_tr))
 oldR0trans <- outer(xs.tr, ys.tr, Vectorize(f_old_tr))
@@ -450,7 +452,7 @@ shadedcontour(newR0hosts, oldR0hosts,
               box.size = .875, lab = c("a.","b."), cont.cx = .65,
               circ.x = 2.5, circ.y = 1.25,
               circ.rx = 1.25, circ.ry = 0.3,
-              refline = TRUE)                     # <‑‑ 1–1 line ON
+              refline = F)                     # <‑‑ 1–1 line ON
 
 mtext("Number Large Host (1000s)", side = 1,
       line = lin, cex = CX, outer = FALSE, at = 0)
@@ -468,7 +470,7 @@ shadedcontour(newR0hostvec, oldR0hostvec,
               lab = c("c.","d."), cont.cx = .65,
               circ.x = 1.5, circ.y = 25,
               circ.rx = 0.3, circ.ry = 9,
-              refline = TRUE)                     # <‑‑ 1–1 line ON
+              refline = F)                     # <‑‑ 1–1 line ON
 
 mtext("Number Large Host (1000s)", side = 1,
       line = lin, cex = CX, outer = FALSE, at = 0)
