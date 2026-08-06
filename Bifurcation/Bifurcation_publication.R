@@ -48,12 +48,12 @@ if (!dir.exists(out.dir)) {
 library(RColorBrewer)
 
 ## -------- 2  source analytic R0 functions ------------------------------------
-source(file.path("..", "..", "R0Compare", "r0numerical2specIntro.r"))
-source(file.path("..", "..", "R0Compare", "r0numerical2specIntroOldDenom.r"))
+source(file.path("..", "R0Compare", "r0numerical2specIntro.r"))
+source(file.path("..", "R0Compare", "r0numerical2specIntroOldDenom.r"))
 
 ## -------- 3  parameters & data paths -----------------------------------------
-new.dir  <- file.path("..", "NewForm-FixSmallPrimate")
-old.dir  <- file.path("..", "OldForm-FixSmallPrimate")
+new.dir  <- file.path("..", "NewForm-FixSmallHost")
+old.dir  <- file.path("..", "OldForm-FixSmallHost")
 
 n.sim   <- 100                       # number of beta lines (1…100)
 disc    <- 50                        # matches original beta step
@@ -127,7 +127,7 @@ if (file.exists(rds.file)) {
   # read small-host prevalence: weighted FOI ----------------------------------
   bifP.new <- matrix(NA, nrow = n.sim, ncol = length(idx))
   for (i in seq_len(n.sim)) {
-    temp <- read.csv(file.path(new.dir, "Primate", paste0("P-bb", i, ".csv")),
+    temp <- read.csv(file.path(new.dir, "Host", paste0("P-bb", i, ".csv")),
                      header = FALSE)
     bifP.new[i, ] <- temp[idx, 1]
   }
@@ -143,7 +143,7 @@ if (file.exists(rds.file)) {
   # read small-host prevalence: unweighted FOI --------------------------------
   bifP.old <- matrix(NA, nrow = n.sim, ncol = length(idx))
   for (i in seq_len(n.sim)) {
-    temp <- read.csv(file.path(old.dir, "Primate", paste0("P-bb", i, ".csv")),
+    temp <- read.csv(file.path(old.dir, "Host", paste0("P-bb", i, ".csv")),
                      header = FALSE)
     bifP.old[i, ] <- temp[idx, 1]
   }
@@ -234,11 +234,11 @@ par(mfrow = c(2, 1),
     mgp  = c(2, 0.05, 0),
     tck  = 0.02)
 
-# panel 1: large primate (human) --------------------------------------------
-plot_overlay(R0.new, R0.old, bifH.new, bifH.old, "Large Primate")
+# panel 1: large Host (human) --------------------------------------------
+plot_overlay(R0.new, R0.old, bifH.new, bifH.old, "Large Host")
 
-# panel 2: small primate ----------------------------------------------------
-plot_overlay(R0.new, R0.old, bifP.new, bifP.old, "Small Primate")
+# panel 2: small Host ----------------------------------------------------
+plot_overlay(R0.new, R0.old, bifP.new, bifP.old, "Small Host")
 
 # shared axis labels --------------------------------------------------------
 mtext(expression(R[0]), side = 1, outer = TRUE, line = 0.5, cex = 1)

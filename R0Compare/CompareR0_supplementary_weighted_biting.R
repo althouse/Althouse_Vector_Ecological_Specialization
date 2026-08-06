@@ -177,10 +177,13 @@ equalise_bites <- function(f_old) {
     
     # -------- helper to rescale one vector -----------------
     rescale <- function(r_vec) {
-      # Reviewer #2's normalization: c_j = N_j^M / N_j^W
-      # where N_j^M = total host abundance (unweighted)
-      #       N_j^W = weighted denominator = sum(r_vj_hi * N_hi)
-      c_j <- sum(Nh_vec) / sum(r_vec * Nh_vec)
+      # Reviewer #2's normalization: c_j = Nbar / D_j
+      # where Nbar = sum(N_hi)  (unweighted total)
+      #       D_j  = sum( (r_vj_hi / sum(r_vj)) * N_hi )  (weighted denom)
+      # Note: must normalize r_vec to preference fractions before weighting
+      r_frac <- r_vec / sum(r_vec)
+      D_j    <- sum(r_frac * Nh_vec)
+      c_j    <- sum(Nh_vec) / D_j
       r_vec * c_j                                    # multiply by c_j
     }
     
@@ -262,11 +265,11 @@ ys.hv <- seq(1, 500 * 100, length.out = 100)  # Nm1: 1–5 ×10^4
 
 f_new_hv <- function(Nh, Nm1)
   do.call(r0new, modifyList(core.args,
-                            list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh)))
+                            list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh + 1000)))
 
 f_old_hv <- function(Nh, Nm1)
   do.call(r0old.eq, modifyList(core.args,
-                            list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh)))
+                            list(Nh = Nh, Np1 = 1000, Nm1 = Nm1, NN = Nh + 1000)))
 
 newR0hostvec <- outer(xs.hv, ys.hv, Vectorize(f_new_hv))
 oldR0hostvec <- outer(xs.hv, ys.hv, Vectorize(f_old_hv))
