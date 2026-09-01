@@ -135,19 +135,57 @@ compute_surfaces <- function(direction_multiplier = 1,
   )
 }
 
-shade_subthreshold <- function(x, y, z, epsilon, divisor, flip) {
-  index <- which(z < 1 & z >= 1 - epsilon, arr.ind = TRUE)
-  if (!nrow(index)) return(invisible(NULL))
+shade_subthreshold <- function(x, y, z, divisor, flip) {
+  below_threshold <- z < 1
+  has_subthreshold <- apply(below_threshold, 1, any)
+  if (!any(has_subthreshold)) return(invisible(NULL))
 
-  groups <- split(index[, 2], index[, 1])
-  x_index <- as.integer(names(groups))
-  y_index <- vapply(groups, function(values) as.integer(round(mean(values))),
-                    integer(1))
-  xx <- x[x_index] / divisor
-  yy <- y[y_index] / divisor
-  edge <- if (flip) min(y) / divisor else max(y) / divisor
-  polygon(c(xx, rev(xx)), c(yy, rep(edge, length(yy))),
-          col = "black", border = FALSE, density = 10)
+  interpolate_crossing <- function(y1, y2, z1, z2) {
+    if (isTRUE(all.equal(z1, z2))) return(mean(c(y1, y2)))
+    y1 + (1 - z1) * (y2 - y1) / (z2 - z1)
+  }
+
+  boundary <- vapply(seq_along(x), function(i) {
+    indices <- which(below_threshold[i, ])
+    if (!length(indices)) return(NA_real_)
+
+    if (flip) {
+      last_below <- max(indices)
+      if (last_below == length(y)) return(max(y))
+      interpolate_crossing(
+        y[last_below], y[last_below + 1],
+        z[i, last_below], z[i, last_below + 1]
+      )
+    } else {
+      first_below <- min(indices)
+      if (first_below == 1) return(min(y))
+      interpolate_crossing(
+        y[first_below - 1], y[first_below],
+        z[i, first_below - 1], z[i, first_below]
+      )
+    }
+  }, numeric(1))
+
+  valid <- which(!is.na(boundary))
+  runs <- split(valid, cumsum(c(TRUE, diff(valid) != 1)))
+  panel_x <- par("usr")[1:2]
+  panel_y <- par("usr")[3:4]
+  edge <- if (flip) panel_y[1] else panel_y[2]
+
+  for (run in runs) {
+    xx <- x[run] / divisor
+    yy <- boundary[run] / divisor
+
+    if (run[1] == 1) {
+      xx[1] <- panel_x[1]
+    }
+    if (run[length(run)] == length(x)) {
+      xx[length(xx)] <- panel_x[2]
+    }
+
+    polygon(c(xx, rev(xx)), c(yy, rep(edge, length(yy))),
+            col = "black", border = FALSE, density = 10)
+  }
 }
 
 draw_ellipse <- function(center_x, center_y, radius_x, radius_y) {
@@ -156,24 +194,23 @@ draw_ellipse <- function(center_x, center_y, radius_x, radius_y) {
         col = "red", lwd = 2)
 }
 
-draw_pair <- function(x, y, weighted, unweighted, divisor,
-                      epsilon_weighted, epsilon_unweighted, flip,
+draw_pair <- function(x, y, weighted, unweighted, divisor, flip,
                       y_title, labels, ellipse, contour_size = 0.65) {
-  draw_panel <- function(z, epsilon, show_y, label) {
+  draw_panel <- function(z, show_y, label) {
     contour(x / divisor, y / divisor, z, levels = c(1, 2, 5),
             col = "black", labcex = contour_size, axes = FALSE, lwd = 2)
     axis(1, lwd = 0)
     axis(2, lwd = 0, labels = show_y)
-    shade_subthreshold(x, y, z, epsilon, divisor, flip)
+    shade_subthreshold(x, y, z, divisor, flip)
     do.call(draw_ellipse, ellipse)
     text(par("usr")[2], par("usr")[4] * 0.93, label,
          font = 2, cex = 1, pos = 2, xpd = NA)
     box()
   }
 
-  draw_panel(weighted, epsilon_weighted, TRUE, labels[1])
+  draw_panel(weighted, TRUE, labels[1])
   mtext(y_title, side = 2, line = 1.5, cex = 0.7)
-  draw_panel(unweighted, epsilon_unweighted, FALSE, labels[2])
+  draw_panel(unweighted, FALSE, labels[2])
 }
 
 write_comparison_figure <- function(surfaces, output_file) {
@@ -186,7 +223,7 @@ write_comparison_figure <- function(surfaces, output_file) {
   draw_pair(
     surfaces$host_axis, surfaces$host_axis,
     surfaces$weighted_hosts, surfaces$unweighted_hosts,
-    divisor = 1000, epsilon_weighted = 0.05, epsilon_unweighted = 0.25,
+    divisor = 1000,
     flip = FALSE, y_title = "Number Small Host (1000s)", labels = c("a.", "b."),
     ellipse = list(center_x = 1.5, center_y = 2.5,
                    radius_x = 0.3, radius_y = 1.25)
@@ -197,7 +234,7 @@ write_comparison_figure <- function(surfaces, output_file) {
   draw_pair(
     surfaces$host_axis, surfaces$vector_axis,
     surfaces$weighted_vectors, surfaces$unweighted_vectors,
-    divisor = 1000, epsilon_weighted = 0.005, epsilon_unweighted = 0.25,
+    divisor = 1000,
     flip = TRUE, y_title = "Number Vectors (1000s)", labels = c("c.", "d."),
     ellipse = list(center_x = 1.5, center_y = 25,
                    radius_x = 0.3, radius_y = 9)
@@ -208,7 +245,7 @@ write_comparison_figure <- function(surfaces, output_file) {
   draw_pair(
     surfaces$transmission_axis, surfaces$transmission_axis,
     surfaces$weighted_transmission, surfaces$unweighted_transmission,
-    divisor = 1, epsilon_weighted = 0.25, epsilon_unweighted = 0.25,
+    divisor = 1,
     flip = TRUE, y_title = "Small Host Transmission Probability",
     labels = c("e.", "f."),
     ellipse = list(center_x = 0.05, center_y = 0.12,
