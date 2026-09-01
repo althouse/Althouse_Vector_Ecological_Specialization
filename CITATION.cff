@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated article."
+title: "Code for ecological specialization in vectors"
+type: software
+authors:
+  - family-names: Althouse
+    given-names: Benjamin M.
+repository-code: "https://github.com/althouse/Althouse_Vector_Ecological_Specialization"
+license: MIT
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Althouse
+      given-names: Benjamin M.
+  title: "Ecological specialization in vectors alters transmission thresholds and endemic dynamics in multi-host, multi-vector systems"
+  journal: "PLOS Computational Biology"
+  year: 2026

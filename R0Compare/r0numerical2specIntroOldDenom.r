@@ -28,8 +28,8 @@
 #' @author Benjamin M. Althouse
 #' @copyright
 #'   © 2012 Althouse *et al.* — analytic derivation  
-#'   © 2025 Benjamin M. Althouse — this R implementation  
-#'   Distributed under the Creative Commons Attribution 4.0 Licence (CC BY 4.0).
+#'   © 2025-2026 Benjamin M. Althouse — this R implementation
+#'   Distributed under the MIT License; see the repository LICENSE file.
 #'
 #' @return A single numeric value: the basic reproduction number \(R_0\).
 #'

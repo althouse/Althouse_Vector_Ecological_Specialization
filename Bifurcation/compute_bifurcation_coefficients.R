@@ -15,6 +15,7 @@
 #
 # Author: Benjamin M. Althouse
 # Date:   2026-02-25
+# License: MIT
 ################################################################################
 
 cat("=========================================================================\n")
@@ -390,12 +391,10 @@ results_M <- compute_ab("unweighted")
 # Cross-check with analytic
 cat("\n── Analytic cross-check ──\n")
 cat("  (Using closed-form second derivatives)\n")
-suppressMessages({
-  sink("/dev/null")  # suppress eigenvector printout
+invisible(capture.output({
   ana_W <- compute_ab_analytic("weighted")
   ana_M <- compute_ab_analytic("unweighted")
-  sink()
-})
+}))
 cat(sprintf("  a_W (numeric) = %+.6e    a_W (analytic) = %+.6e    diff = %.2e\n",
             results_W$a, ana_W$a, abs(results_W$a - ana_W$a)))
 cat(sprintf("  a_M (numeric) = %+.6e    a_M (analytic) = %+.6e    diff = %.2e\n",
@@ -417,3 +416,8 @@ cat(sprintf("  a_M = %+.4e    (unweighted / opportunistic)\n", results_M$a))
 cat(sprintf("  b_W = %+.4e\n", results_W$b))
 cat(sprintf("  b_M = %+.4e\n", results_M$b))
 cat("=========================================================================\n")
+
+stopifnot(results_W$a < 0, results_M$a < 0,
+          results_W$b > 0, results_M$b > 0,
+          abs(results_W$a - ana_W$a) < 1e-8,
+          abs(results_M$a - ana_M$a) < 1e-8)

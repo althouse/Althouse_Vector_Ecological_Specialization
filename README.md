@@ -1,203 +1,127 @@
-# Althouse_Vector_Ecological_Specialization
+# Ecological specialization in vectors
 
-## Ecological Specialization in Vectors  
-### Reproducing the analyses and figures for  
-**"Ecological specialization in vectors drives backward bifurcations and creates enzootic traps in multi-host, multi-vector systems."**
+Reproducible code for the accepted PLOS Computational Biology article:
 
-Benjamin M. Althouse  
-*Submitted to PLoS Computational Biology* (2025)
-
----
-
-## Repository structure
-
-```
-Althouse_Vector_Ecological_Specialization/
-│
-├─ Bifurcation/
-│   ├─ Bifurcation_publication.R       # Generates Figure 2 (bifurcation diagram)
-│   ├─ bifurcation_data_cache.rds      # Cached numerical bifurcation data
-│   └─ output_2025-12-09/
-│       └─ bifurcation_R0_two_panel_overlay.pdf  # Figure 2 output
-│
-├─ R0Compare/
-│   ├─ CompareR0.R                              # Main text Figure 3
-│   ├─ CompareR0_supplementary.R                # Supplement Fig S1 (normalized, unweighted biting)
-│   ├─ CompareR0_supplementary_weighted_biting.R # Supplement Fig S2 (normalized, weighted biting)
-│   ├─ r0numerical2specIntro.r                  # R₀ calculation: weighted FOI (Eq. 3)
-│   └─ r0numerical2specIntroOldDenom.r          # R₀ calculation: unweighted FOI (Eq. 4)
-│
-└─ README.md
-```
+> Benjamin M. Althouse. **Ecological specialization in vectors alters transmission thresholds and endemic dynamics in multi-host, multi-vector systems.** PLOS Computational Biology (accepted, 2026; DOI pending).
 
 ## Overview
 
-This repository contains R code to reproduce the analytical results and figures from the manuscript on ecological specialization in vector-borne disease systems. The analysis examines how different force-of-infection (FOI) formulations affect the basic reproduction number (R₀) and system dynamics in multi-host, multi-vector disease models.
+This repository compares two force-of-infection (FOI) formulations for a two-host, two-vector SIR-SI model:
 
-### Key analyses
+- **Weighted FOI:** vectors disproportionately contact preferred hosts.
+- **Unweighted FOI:** vectors encounter the full host community opportunistically.
 
-1. **Bifurcation analysis** (`Bifurcation/`): Demonstrates backward bifurcations and multiple endemic equilibria when vectors exhibit ecological specialization (differential host preferences)
+With the same nominal parameters, the formulations can produce different epidemic thresholds, long-run prevalence, and oscillation amplitudes. Both autonomous formulations undergo a **forward (supercritical) transcritical bifurcation at `R0 = 1`**. The model does not support a backward bifurcation or hysteresis under the assumptions analyzed here.
 
-2. **R₀ surface comparison** (`R0Compare/`): Compares R₀ landscapes under weighted vs. unweighted FOI formulations across parameter space
+An equal-bite rescaling makes the complete ODE systems, and therefore their `R0` surfaces, identical. This confirms that the unnormalized comparison reflects different total contact rates implied by the two ecological hypotheses.
 
-## Quick-start
+## Repository contents
 
-### Prerequisites
-* **R ≥ 4.0** with packages: `RColorBrewer`, `fields`, `rgl`, `rstudioapi`
-
-### Clone and run
-
-```bash
-git clone https://github.com/althouse/Althouse_Vector_Ecological_Specialization.git
-cd Althouse_Vector_Ecological_Specialization
+```text
+.
+├── Bifurcation/
+│   ├── Bifurcation_publication.R
+│   ├── bifurcation_data_cache.rds
+│   └── compute_bifurcation_coefficients.R
+├── R0Compare/
+│   ├── CompareR0.R
+│   ├── CompareR0_supplementary.R
+│   ├── CompareR0_supplementary_weighted_biting.R
+│   ├── figure_helpers.R
+│   ├── r0numerical2specIntro.r
+│   ├── r0numerical2specIntroOldDenom.r
+│   └── test_normalization.R
+├── outputs/
+│   ├── Figure2_prevalence_vs_R0.pdf
+│   ├── Figure3_R0_comparison.pdf
+│   ├── FigureS1_equal_bite_R0_comparison.pdf
+│   └── FigureS2_asymmetric_transmission.pdf
+├── CITATION.cff
+├── LICENSE
+└── run_all.R
 ```
 
-### Generate Figure 2 (Bifurcation diagram)
+### Analysis-to-figure map
 
-```bash
-cd Bifurcation
-Rscript Bifurcation_publication.R
+| Script | Manuscript result | Output |
+|---|---|---|
+| `Bifurcation/Bifurcation_publication.R` | Main Figure 2: periodically forced prevalence samples versus `R0` | `outputs/Figure2_prevalence_vs_R0.pdf` |
+| `Bifurcation/compute_bifurcation_coefficients.R` | Center-manifold coefficients; forward transcritical bifurcation for both FOIs | Console report and numerical assertions |
+| `R0Compare/CompareR0.R` | Main Figure 3: unnormalized weighted versus unweighted `R0` landscapes | `outputs/Figure3_R0_comparison.pdf` |
+| `R0Compare/CompareR0_supplementary_weighted_biting.R` | Supplementary Figure S1: equal-bite identity | `outputs/FigureS1_equal_bite_R0_comparison.pdf` |
+| `R0Compare/CompareR0_supplementary.R` | Supplementary Figure S2: asymmetric transmission (`beta_hv = beta_vh / 4`) | `outputs/FigureS2_asymmetric_transmission.pdf` |
+| `R0Compare/test_normalization.R` | Regression test of the equal-bite identity | Pass/fail console report |
+
+The vertical point clouds in Figure 2 are annual samples from a single periodically forced trajectory at each parameter value. They represent temporal variation, not coexisting equilibria.
+
+## Requirements
+
+- R 4.1 or newer
+- R package `RColorBrewer`
+
+Install the only non-base dependency with:
+
+```r
+install.packages("RColorBrewer")
 ```
 
-Output: `output_YYYY-MM-DD/bifurcation_R0_two_panel_overlay.pdf`
+The scripts use relative paths, run without RStudio, and do not require a graphical display.
 
-### Generate Figure 3 (R₀ comparison)
+## Reproduce everything
 
-```bash
-cd R0Compare
-Rscript CompareR0.R
-```
-
-Output: `output_YYYY-MM-DD/CompareR0-fig3-6x8in.pdf`
-
-### Generate Supplement Figures
+From the repository root:
 
 ```bash
-# Supplement Figure S1 (normalized, unweighted biting)
-Rscript CompareR0_supplementary.R
-
-# Supplement Figure S2 (normalized, weighted biting)  
-Rscript CompareR0_supplementary_weighted_biting.R
+Rscript run_all.R
 ```
 
-Outputs: `output_YYYY-MM-DD_supp/` and `output_YYYY-MM-DD_supp_weighted/`
+This runs both numerical checks and regenerates all four PDFs in `outputs/`.
 
----
+To run components individually:
 
-## Code details
+```bash
+Rscript Bifurcation/compute_bifurcation_coefficients.R
+Rscript R0Compare/test_normalization.R
+Rscript Bifurcation/Bifurcation_publication.R
+Rscript R0Compare/CompareR0.R
+Rscript R0Compare/CompareR0_supplementary_weighted_biting.R
+Rscript R0Compare/CompareR0_supplementary.R
+```
 
-### Bifurcation analysis
+## Principal parameters
 
-**`Bifurcation_publication.R`** generates a two-panel bifurcation diagram (Figure 2) showing endemic equilibria as a function of R₀, contrasting weighted (Eq. 3) and unweighted (Eq. 4) force-of-infection formulations.
+- Host populations for the baseline comparison: 1,000 per species
+- Vector populations: 25,000 per species
+- Primary-host biting rate: `0.5 day^-1`
+- Cross-host biting rate: `0.001 day^-1`
+- Host recovery rate: `1/4 day^-1`
+- Large-host mortality: `1/(60 * 365) day^-1`
+- Small-host mortality: `1/(15 * 365) day^-1`
+- Vector mortality: `1/7 day^-1`
 
-The script:
-1. Creates a date-stamped output folder (`output_YYYY-MM-DD/`)
-2. Loads cached bifurcation data from previous ODE simulations
-3. Calculates analytical R₀ for each transmission rate (β) value
-4. Generates a 6.8 × 5-inch two-panel PDF showing prevalence vs. R₀
-5. Demonstrates backward bifurcations and hysteresis effects
+The Figure 3 grids cover large- and small-host abundances from 1 to 5,000, vector abundance from 1 to 50,000, and transmission probabilities from 0 to 0.5. Red ellipses show the field-based Kédougou parameter estimates and uncertainty ranges used in the article.
 
-**Parameters** (based on Kédougou, Senegal sylvatic dengue system):
-- Two host species: large primates (*Erythrocebus patas*), small primates (*Galago senegalensis*)
-- Two vector species: *Aedes furcifer*, *Aedes taylori*
-- Vectors exhibit strong ecological specialization (differential host preferences)
-- Host populations: N_h = N_p = 1,000
-- Vector populations: N_m1 = N_m2 = 25,000
+## Reproducibility notes
 
-### R₀ surface comparison
+- `Bifurcation/bifurcation_data_cache.rds` contains the annual prevalence samples needed for Figure 2, so the original long ODE simulations are not required to reproduce that plot.
+- `r0numerical2specIntro.r` and `r0numerical2specIntroOldDenom.r` implement the weighted and unweighted closed-form `R0` expressions, respectively.
+- The equal-bite transformation uses `c_j = Nbar / D_j`, where `D_j` is calculated from normalized preference weights. The regression test fails if the two formulations differ by more than `1e-10` in the tested scenarios.
+- Generated outputs use stable filenames so reruns are directly comparable.
 
-**`CompareR0.R`** produces Figure 3, a heat map comparing R₀ surfaces under the two FOI formulations across a grid of host population sizes.
+## Citation
 
-Key features:
-- Explores parameter space: large host (1,000–50,000) × small host (1,000–50,000)
-- Calculates R₀ using both weighted and unweighted FOI denominators
-- Highlights regions where formulations produce different epidemic predictions
-- Includes field data ellipse showing empirical uncertainty
+Citation metadata are provided in [`CITATION.cff`](CITATION.cff). Until the article DOI is assigned, please cite:
 
-**`CompareR0_supplementary.R`** and **`CompareR0_supplementary_weighted_biting.R`** generate supplementary figures showing that when total biting is normalized (equal-bite constraint), the two formulations produce nearly identical R₀ surfaces, confirming their algebraic equivalence under conserved total biting.
+> Althouse BM (2026). *Ecological specialization in vectors alters transmission thresholds and endemic dynamics in multi-host, multi-vector systems.* PLOS Computational Biology, accepted.
 
-### R₀ calculation functions
+The underlying model was introduced in:
 
-**`r0numerical2specIntro.r`** implements the weighted FOI formulation (Eq. 3):
-- FOI denominator weighted by host abundance
-- Function: `r0new()`
-- Closed-form expression for spectral radius of next-generation matrix
-- Based on Althouse et al. (2012) PLOS NTD analytical derivation
-
-**`r0numerical2specIntroOldDenom.r`** implements the unweighted FOI formulation (Eq. 4):
-- FOI denominator uses total bites (unweighted by host abundance)
-- Function: `r0old()`
-- Alternative formulation showing different biological constraints
-
-Both functions take the same epidemiological parameters:
-- Transmission probabilities (β)
-- Vector feeding preferences (r)
-- Host and vector abundances (N)
-- Mortality and recovery rates (μ, γ)
-
----
-
-## Model background
-
-The code implements a multi-host, multi-vector SIR (Susceptible-Infected-Recovered) model for vector-borne disease transmission. The key biological insight is that **vector ecological specialization** (differential host-feeding preferences) can:
-
-1. Create **backward bifurcations** where R₀ > 1 is necessary but not sufficient for disease persistence
-2. Generate **multiple endemic equilibria** and hysteresis effects
-3. Trap systems in **enzootic cycles** even when control efforts reduce R₀ below traditional epidemic thresholds
-
-The choice of FOI denominator (weighted vs. unweighted by host density) affects quantitative predictions about disease dynamics, particularly when vectors exhibit strong host preferences.
-
----
-
-## How to cite
-
-If you use any part of this code or data, please cite the associated article:
-
-> Althouse BM (2025) *Ecological specialization in vectors drives backward bifurcations and creates enzootic traps in multi-host, multi-vector systems.* PLoS Computational Biology (submitted).
-
-And the original model derivation:
-
-> Althouse BM, Lessler J, Sall AA, Diallo M, Hanley KA, et al. (2012) *Synchrony of Sylvatic Dengue Isolations: A Multi-Host, Multi-Vector SIR Model of Dengue Virus Transmission in Senegal.* PLOS Neglected Tropical Diseases 6(11): e1928. [doi:10.1371/journal.pntd.0001928](https://doi.org/10.1371/journal.pntd.0001928)
-
----
-
-## Contact
-
-Questions or pull requests are welcome!  
-**Benjamin M. Althouse** — bma85@uw.edu
-
----
+> Althouse BM, Lessler J, Sall AA, Diallo M, Hanley KA, et al. (2012). Synchrony of Sylvatic Dengue Isolations: A Multi-Host, Multi-Vector SIR Model of Dengue Virus Transmission in Senegal. *PLOS Neglected Tropical Diseases* 6(11): e1928. https://doi.org/10.1371/journal.pntd.0001928
 
 ## License
 
-This repository is released under the **MIT License**.
+The code is released under the [MIT License](LICENSE).
 
-```
-MIT License
+## Contact
 
-Copyright (c) 2025 Benjamin M. Althouse
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
----
-
-## Acknowledgements
-
-Field data collection by the Dakar Pasteur Institute vector team. Bifurcation analysis inspired by discussions with Derek Cummings and David Smith. Funding from NIH AI069145, NSF GRFP DGE-0707427, Santa Fe Institute, and the Global Good Fund.
+Benjamin M. Althouse — bma85@uw.edu

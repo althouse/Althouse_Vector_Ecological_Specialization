@@ -2,10 +2,10 @@
 # bifurcation_publication.R
 # 
 # Produce bifurcation analysis figure for the manuscript:
-#   Althouse BM, *et al.* (2025) — FOI denominators and multi-host dengue.
+#   Althouse BM (2026) — ecological specialization and FOI denominators.
 # 
 # Generates a two-panel bifurcation diagram showing endemic equilibria as a
-# function of R0, contrasting the weighted (Eq. 3) and unweighted (Eq. 4)
+# function of R0, contrasting the weighted and unweighted
 # force-of-infection formulations.
 #
 # Simulation results from:
@@ -16,29 +16,28 @@
 #   10.1371/journal.pntd.0001928
 #
 # The script:
-#   1. Creates a date-stamped output folder.
+#   1. Creates the repository's stable output folder.
 #   2. Loads cached bifurcation data (or reads CSV files if cache absent).
 #   3. Calculates analytical R0 for each beta value.
 #   4. Generates a 6.8 × 5-inch two-panel PDF showing prevalence vs. R0.
 #
 # Source this file or run it with `Rscript bifurcation_publication.R`.
 #
-# © 2025 Benjamin M. Althouse – CC BY 4.0
+# Copyright (c) 2025-2026 Benjamin M. Althouse. MIT License.
 ################################################################################
 
 ## -------- 1  housekeeping ----------------------------------------------------
 rm(list = ls())
 
-# resolve script location even outside RStudio -------------------------------
-this.file <- if (interactive() && requireNamespace("rstudioapi", quietly = TRUE)) {
-  tryCatch(rstudioapi::getSourceEditorContext()$path, error = function(e) "")
-} else {
-  parent.frame(2)$ofile %||% ""
+# Resolve the script location for both Rscript and interactive sourcing.
+args <- commandArgs(trailingOnly = FALSE)
+file_arg <- grep("^--file=", args, value = TRUE)
+if (length(file_arg)) {
+  setwd(dirname(normalizePath(sub("^--file=", "", file_arg[1]))))
 }
-if (nzchar(this.file)) setwd(dirname(this.file))
 
-# output folder yyyy-mm-dd ----------------------------------------------------
-out.dir <- file.path(sprintf("output_%s", format(Sys.Date(), "%Y-%m-%d")))
+# stable output folder --------------------------------------------------------
+out.dir <- file.path("..", "outputs")
 if (!dir.exists(out.dir)) {
   dir.create(out.dir, recursive = TRUE)
   cat("Created output directory:", out.dir, "\n")
@@ -161,7 +160,7 @@ message("Data loading complete.")
 #' Overlay bifurcation branches for weighted vs. unweighted FOI
 #'
 #' Plots prevalence (per 1000) as a function of R0, showing endemic equilibria
-#' for both the weighted-sum (Eq. 3) and simple-sum (Eq. 4) formulations.
+#' for both the weighted and unweighted formulations.
 #' Duplicate equilibria are removed for clarity.
 #'
 #' @param R0.new   numeric vector of R0 values (weighted FOI)
@@ -215,7 +214,7 @@ plot_overlay <- function(R0.new, R0.old, bif.new, bif.old, host.nm) {
   
   # main legend ---------------------------------------------------------------
   legend("topleft", 
-         legend = c("Weighted Sum (Eq. 3)", "Simple Sum (Eq. 4)", 
+         legend = c("Weighted FOI", "Unweighted FOI",
                     expression(R[0] == 1)),
          pch = c(0, 20, NA), lty = c(NA, NA, 2), lwd = c(NA, NA, 2),
          col = c(color.new, color.old, "gray50"), 
@@ -225,7 +224,7 @@ plot_overlay <- function(R0.new, R0.old, bif.new, bif.old, host.nm) {
 ## -------- 7  generate two-panel figure ----------------------------------------
 message("\nGenerating bifurcation plot …")
 
-output.file <- file.path(out.dir, "bifurcation_R0_two_panel_overlay.pdf")
+output.file <- file.path(out.dir, "Figure2_prevalence_vs_R0.pdf")
 pdf(output.file, width = 6.8, height = 5, useDingbats = FALSE)
 
 par(mfrow = c(2, 1),

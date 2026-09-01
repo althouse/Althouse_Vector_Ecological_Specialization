@@ -1,0 +1,7 @@
+.DS_Store
+.Rhistory
+.RData
+.Rproj.user/
+output_*/
+R0Compare/output_*/
+Bifurcation/output_*/
